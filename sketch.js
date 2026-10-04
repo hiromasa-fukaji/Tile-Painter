@@ -155,6 +155,7 @@ function setupUIs() {
 	});
 	pane.addButton({ title: 'Clear Canvas' }).on('click', clearBlender);
 	pane.addButton({ title: 'Export SVG' }).on('click', exportSVG);
+	pane.addButton({ title: 'Export PNG' }).on('click', exportPNG);
 
 	pane.on('change', () => {
 		needsRedraw = true;
@@ -197,6 +198,30 @@ function exportSVG() {
 	URL.revokeObjectURL(url);
 }
  
+function exportPNG() {
+	let pg = createGraphics(width, height);
+	pg.pixelDensity(1);
+	pg.clear();
+	let dithered = showBG == 1;
+	pg.drawingContext.imageSmoothingEnabled = !dithered;
+	for (let b of blenders) {
+		if (dithered) {
+			if (b.ditherImg) pg.image(b.ditherImg, 0, 0, b.dw / b.sc, b.dh / b.sc);
+		} else if (b.bgPG) {
+			pg.image(b.bgPG, 0, 0);
+		}
+	}
+	pg.canvas.toBlob(blob => {
+		let url = URL.createObjectURL(blob);
+		let a = document.createElement('a');
+		a.href = url;
+		a.download = 'tile-painter.png';
+		a.click();
+		URL.revokeObjectURL(url);
+		pg.remove();
+	}, 'image/png');
+}
+
 function updateUIs() {
 	if (!needsRedraw) return;
 	needsRedraw = false;
