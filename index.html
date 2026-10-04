@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Tile Painter</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #e6e6e6; height: 100%; overflow: hidden; }
+  #sketch-holder { display: flex; align-items: center; justify-content: center; height: 100vh; }
+  canvas { display: block; }
+  .tp-dfwv { left: 8px; right: auto !important; }
+</style>
+</head>
+<body>
+<div id="sketch-holder"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script type="module">
+  import { Pane } from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.4/dist/tweakpane.min.js';
+  window.Tweakpane = { Pane };
+</script>
+<script src="sketch.js"></script>
+</body>
+</html>
