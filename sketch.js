@@ -106,17 +106,39 @@ function windowResized() {
 	drawAll(false);
 }
 
-function mouseReleased(e) {
+let dragging = false;
+
+function isInCanvas() {
+	return mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height;
+}
+
+function placeTile() {
+	let blender = blenders[blenders.length - 1];
+	blender.addPoint(createVector(mouseX, mouseY));
+	drawAll(false);
+}
+
+function mousePressed(e) {
+	dragging = false;
 	if (e && e.target && e.target.tagName !== 'CANVAS') return;
-	if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
-		if (deleteMode) {
-			deleteTileAt(mouseX, mouseY);
-			return;
-		}
-		let blender = blenders[blenders.length - 1];
-		blender.addPoint(createVector(mouseX, mouseY));
-		drawAll(false);
-	}
+	if (deleteMode || !isInCanvas()) return;
+	dragging = true;
+	placeTile();
+}
+
+function mouseDragged() {
+	if (!dragging || !isInCanvas()) return;
+	let pts = blenders[blenders.length - 1].points;
+	let last = pts[pts.length - 1];
+	if (last && dist(last.x, last.y, mouseX, mouseY) < divLen) return;
+	placeTile();
+}
+
+function mouseReleased(e) {
+	dragging = false;
+	if (!deleteMode) return;
+	if (e && e.target && e.target.tagName !== 'CANVAS') return;
+	if (isInCanvas()) deleteTileAt(mouseX, mouseY);
 }
  
 // ---------- UI setup / update ----------
@@ -318,9 +340,12 @@ class Blender {
 	}
 
 	buildTile() {
-		if (this.pg) this.pg.remove();
-		let pg = createGraphics(rectWidth, rectHeight);
-		pg.pixelDensity(1);
+		let pg = this.pg;
+		if (!pg || pg.width != rectWidth || pg.height != rectHeight) {
+			if (pg) pg.remove();
+			pg = createGraphics(rectWidth, rectHeight);
+			pg.pixelDensity(1);
+		}
 		pg.background(255);
 		pg.noStroke();
 
