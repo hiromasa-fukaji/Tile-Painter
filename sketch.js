@@ -176,6 +176,8 @@ function setupUIs() {
 		cursor(deleteMode ? CROSS : ARROW);
 	});
 	pane.addButton({ title: 'Clear Canvas' }).on('click', clearBlender);
+	pane.addButton({ title: 'Save Tiles' }).on('click', exportProject);
+	pane.addButton({ title: 'Load Tiles' }).on('click', importProject);
 	pane.addButton({ title: 'Export SVG' }).on('click', exportSVG);
 	pane.addButton({ title: 'Export PNG' }).on('click', exportPNG);
 
@@ -220,6 +222,67 @@ function exportSVG() {
 	URL.revokeObjectURL(url);
 }
  
+function exportProject() {
+	let project = {
+		version: 1,
+		params: PARAMS,
+		canvas: { width, height },
+		blenders: blenders.map(b => ({
+			tile: b.tile,
+			divLen: b.divLen,
+			sc: b.sc,
+			points: b.points.map(p => [p.x, p.y]),
+		})),
+	};
+	let blob = new Blob([JSON.stringify(project)], { type: 'application/json' });
+	let url = URL.createObjectURL(blob);
+	let a = document.createElement('a');
+	a.href = url;
+	a.download = 'tile-painter-project.json';
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+function importProject() {
+	let input = document.createElement('input');
+	input.type = 'file';
+	input.accept = 'application/json,.json';
+	input.onchange = () => {
+		let file = input.files[0];
+		if (!file) return;
+		file.text().then(text => {
+			applyProject(JSON.parse(text));
+		}).catch(() => alert('ファイルを読み込めませんでした'));
+	};
+	input.click();
+}
+
+function applyProject(project) {
+	for (let key of Object.keys(PARAMS)) {
+		if (typeof project.params[key] === typeof PARAMS[key]) {
+			PARAMS[key] = project.params[key];
+		}
+	}
+
+	let kx = width / project.canvas.width;
+	let ky = height / project.canvas.height;
+	for (let b of blenders) b.dispose();
+	blenders = [];
+	for (let sb of project.blenders) {
+		let b = new Blender();
+		b.buildTile(sb.tile);
+		b.divLen = sb.divLen;
+		b.sc = sb.sc;
+		b.points = sb.points.map(p => createVector(p[0] * kx, p[1] * ky));
+		blenders.push(b);
+	}
+	if (blenders.length == 0) createNewBlender();
+
+	pane.refresh();
+	saveParams();
+	needsRedraw = true;
+}
+
 function exportPNG() {
 	let pg = createGraphics(width, height);
 	pg.pixelDensity(1);
@@ -316,10 +379,15 @@ function createNewBlender() {
 	blenders.push(new Blender());
 }
 
+function currentTileParams() {
+	return { rectWidth, rectHeight, stripeMin, stripeMax, stripeRotate, blur, bwMin, bwMax, seed };
+}
+
 // ---------- Blender ----------
 class Blender {
 	constructor() {
 		this.points = [];
+		this.tile = null;
 		this.divLen = divLen;
 		this.sc = sc;
 		this.pg = null;
@@ -339,33 +407,34 @@ class Blender {
 		if (this.dPG) this.dPG.remove();
 	}
 
-	buildTile() {
+	buildTile(t = currentTileParams()) {
+		this.tile = t;
 		let pg = this.pg;
-		if (!pg || pg.width != rectWidth || pg.height != rectHeight) {
+		if (!pg || pg.width != t.rectWidth || pg.height != t.rectHeight) {
 			if (pg) pg.remove();
-			pg = createGraphics(rectWidth, rectHeight);
+			pg = createGraphics(t.rectWidth, t.rectHeight);
 			pg.pixelDensity(1);
 		}
 		pg.background(255);
 		pg.noStroke();
 
-		randomSeed(seed);
+		randomSeed(t.seed);
 		let h = 0.0;
 
 		pg.push();
 		pg.translate(pg.width * 0.5, pg.height * 0.5);
-		pg.rotate(radians(stripeRotate));
+		pg.rotate(radians(t.stripeRotate));
 		let maxSize = max(pg.width, pg.height);
 		while (h <= maxSize * 2) {
-			let xstep = floor(random(stripeMin, stripeMax));
-			let col = random(bwMin, bwMax);
+			let xstep = floor(random(t.stripeMin, t.stripeMax));
+			let col = random(t.bwMin, t.bwMax);
 			pg.fill(col);
 			pg.rect(h - maxSize, -maxSize, h + xstep, maxSize * 2);
 
 			h += xstep;
 		}
 		pg.pop();
-		pg.filter(BLUR, blur, false);
+		pg.filter(BLUR, t.blur, false);
 
 		this.pg = pg;
 	}
