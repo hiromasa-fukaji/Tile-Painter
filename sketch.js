@@ -144,7 +144,7 @@ function mouseReleased(e) {
 // ---------- UI setup / update ----------
 function setupUIs() {
 	loadParams();
-	pane = new Tweakpane.Pane({ title: 'Tile Painter' });
+	pane = new Tweakpane.Pane({ title: 'TILING BRUSH TOOL', container: document.getElementById('pane-holder') });
 
 	const tile = pane.addFolder({ title: 'Tile' });
 	tile.addBinding(PARAMS, 'rectWidth', { label: 'tile w', min: 1, max: 300, step: 1 });
@@ -152,7 +152,7 @@ function setupUIs() {
 	tile.addBinding(PARAMS, 'stripeMin', { label: 'line min', min: 1, max: 100, step: 1 });
 	tile.addBinding(PARAMS, 'stripeMax', { label: 'line max', min: 1, max: 100, step: 1 });
 	tile.addBinding(PARAMS, 'stripeRotate', { label: 'rotate', min: 0, max: 360, step: 1 });
-	tile.addBinding(PARAMS, 'blur', { min: 0, max: 10, step: 1 });
+	tile.addBinding(PARAMS, 'blur', { min: 0, max: 30, step: 1 });
 	tile.addBinding(PARAMS, 'bwMin', { label: 'bw min', min: 0, max: 255, step: 1 });
 	tile.addBinding(PARAMS, 'bwMax', { label: 'bw max', min: 0, max: 255, step: 1 });
 	tile.addBinding(PARAMS, 'seed', { min: 0, max: 100, step: 1 });
